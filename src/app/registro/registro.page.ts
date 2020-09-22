@@ -2,6 +2,10 @@ import { Component, OnInit } from '@angular/core';
 import { FormGroup, Validators, FormBuilder } from '@angular/forms';
 import { CpfValidator } from '../validators/cpf-validator';
 import { ComparacaoValidator } from '../validators/comparacao-validator';
+import { Router } from '@angular/router';
+import { AlertController } from '@ionic/angular';
+import { UsuariosService } from '../services/usuarios.service';
+import { Usuario } from '../models/usuario';
 
 @Component({
   selector: 'app-registro',
@@ -10,7 +14,11 @@ import { ComparacaoValidator } from '../validators/comparacao-validator';
 })
 export class RegistroPage implements OnInit {
 
-  constructor(private formBuilder: FormBuilder) {
+  constructor(private formBuilder: FormBuilder,
+    private usuariosService: UsuariosService,
+    private alertController: AlertController,
+    private router: Router	  
+    ) {
     this.formRegistro = formBuilder.group({
       nome: ['', Validators.compose([Validators.required, Validators.minLength(3)])],
       cpf: ['', Validators.compose([
@@ -73,6 +81,39 @@ export class RegistroPage implements OnInit {
   }
 
   ngOnInit() {
+  }
+
+  public async salvarFormulario(){
+    if(this.formRegistro.valid){
+  
+      let usuario = new Usuario();
+      usuario.cpf = this.formRegistro.value.cpf;
+      usuario.dataNascimento = new Date(this.formRegistro.value.dataNascimento);
+      usuario.genero = this.formRegistro.value.genero;
+      usuario.celular = this.formRegistro.value.celular;
+      usuario.email = this.formRegistro.value.email;
+      usuario.senha = this.formRegistro.value.senha;
+      
+      if(await this.usuariosService.salvar(usuario)){
+        this.exibirAlerta('SUCESSO!', 'Usuário salvo com sucesso!');
+        this.router.navigateByUrl('/login');
+      } else{
+        this.exibirAlerta('ERRO!', 'Erro ao salvar o usuário!');
+      }
+    
+      } else{
+        this.exibirAlerta('ADVERTENCIA!', 'Formulário inválido<br/>Verifique os campos do seu formulário!');
+      }
+  }
+  
+  async exibirAlerta(titulo: string, mensagem: string){
+    const alert = await this.alertController.create({
+      header: titulo,
+      message: mensagem,
+      buttons: ['OK']
+    });
+  
+    await alert.present();
   }
 
 }
